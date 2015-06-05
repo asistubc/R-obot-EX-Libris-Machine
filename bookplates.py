@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# Trellis keyboard programming courtesy Tony DiCola - Adafruit blog
 
 from gi.repository import Gtk,Gdk,GdkPixbuf
 import os, sys, time 
@@ -17,7 +18,7 @@ class HeadScreen(Gtk.Window):
 
         # Create end button
         b_end = Gtk.Button("End")
-        b_end.connect("clicked", Gtk.main_quit)
+        b_end.connect("clicked", self.end_clicked)
 
         # Create image for head1
         o_head1 = GdkPixbuf.Pixbuf().new_from_file_at_size("robots/head1.gif", 100, 80)
@@ -50,6 +51,14 @@ class HeadScreen(Gtk.Window):
         s_body.show_all()
         self.destroy()
 
+    def end_clicked(self, button):
+        self.destroy()
+        Gtk.main_quit()
+        # Configure to run in a loop - create the head screen again
+        s_head = HeadScreen()
+        s_head.show_all()
+        Gtk.main()
+
 class BodyScreen(Gtk.Window):
 
     def __init__(self, head):
@@ -63,7 +72,7 @@ class BodyScreen(Gtk.Window):
 
         # Create end button
         b_end = Gtk.Button("End")
-        b_end.connect("clicked", Gtk.main_quit)
+        b_end.connect("clicked", self.end_clicked)
 
         # Create image for head1
         o_body1 = GdkPixbuf.Pixbuf().new_from_file_at_size("robots/body1.gif", 100, 80)
@@ -96,6 +105,14 @@ class BodyScreen(Gtk.Window):
         s_legs.show_all()
         self.destroy()
 
+    def end_clicked(self, button):
+        self.destroy()
+        Gtk.main_quit()
+        # Configure to run in a loop - create the head screen again
+        s_head = HeadScreen()
+        s_head.show_all()
+        Gtk.main()
+
 class LegsScreen(Gtk.Window):
 
     def __init__(self, head, body):
@@ -109,7 +126,7 @@ class LegsScreen(Gtk.Window):
 
         # Create end button
         b_end = Gtk.Button("End")
-        b_end.connect("clicked", Gtk.main_quit)
+        b_end.connect("clicked", self.end_clicked)
 
         # Create image for legs1
         o_legs1 = GdkPixbuf.Pixbuf().new_from_file_at_size("robots/legs1.gif", 100, 80)
@@ -142,6 +159,15 @@ class LegsScreen(Gtk.Window):
         s_name.show_all()
         self.destroy()
 
+    def end_clicked(self, button):
+        self.destroy()
+        Gtk.main_quit()
+        # Configure to run in a loop - create the head screen again
+        s_head = HeadScreen()
+        s_head.show_all()
+        Gtk.main()
+
+
 class NameScreen(Gtk.Window):
     def __init__(self, head, body, legs):
         Gtk.Window.__init__(self, title="Type name")
@@ -150,11 +176,12 @@ class NameScreen(Gtk.Window):
 
     def paint_name_screen(self, head, body, legs):
         grid = Gtk.Grid()
+        grid.set_row_spacing(20)
         self.add(grid)
 
         # Create end button
         b_end = Gtk.Button("End")
-        b_end.connect("clicked", Gtk.main_quit)
+        b_end.connect("clicked", self.end_clicked)
 
         # get name from keyboard
         t_entry = Gtk.Entry()
@@ -165,18 +192,58 @@ class NameScreen(Gtk.Window):
         grid.add(b_end)
         grid.attach_next_to(t_entry, b_end, Gtk.PositionType.BOTTOM, 2, 1)
         grid.attach_next_to(b_print, t_entry, Gtk.PositionType.BOTTOM, 1, 2)        
+        t_entry.grab_focus()
 
     def print_clicked(self, button, head, body, legs, t_entry):
         name = t_entry.get_text()
 
         os.system("convert -pointsize 20 -size 200x400 xc:white /home/pi/robots/head" + str(head) + ".gif -geometry +0+10 -composite /home/pi/robots/body" + str(body) + ".gif -geometry +0+110 -composite /home/pi/robots/legs" + str(legs) + ".gif -geometry +0+205 -composite caption:'        " + name + "' -append /home/pi/temp-robot.gif")
         time.sleep(1)
-        os.system("convert -size 250x500 xc:white /home/pi/robots/rexlibris.gif -geometry +10+10 -composite /home/pi/temp-robot.gif -geometry +0+50 -composite -append /home/pi/temp-final-robot.gif")
-        time.sleep(5)
-        os.system("lpr -o page-left=20 -o media='10x20' -P piprinter /home/pi/temp-final-robot.gif")
+        #os.system("convert -size 250x500 xc:white /home/pi/robots/rexlibris.gif -geometry +10+10 -composite /home/pi/temp-robot.gif -geometry +0+50 -composite -append /home/pi/temp-final-robot.gif")
+        #time.sleep(5)
+        os.system("lpr -o page-left=20 -o media='10x20' -P piprinter /home/pi/temp-robot.gif")
 
         time.sleep(3)
         Gtk.main_quit()
+        time.sleep(4)
+        self.destroy()
+
+        # Configure to run in a loop - create the head screen again
+        s_head = HeadScreen()
+        s_head.show_all()
+        Gtk.main()
+
+    def end_clicked(self, button):
+        self.destroy()
+        Gtk.main_quit()
+        # Configure to run in a loop - create the head screen again
+        s_head = HeadScreen()
+        s_head.show_all()
+        Gtk.main()
+
+import Adafruit_Trellis
+class TrellisKeyboard:
+    def __init__(self):
+        self.matrix0 = Adafruit_Trellis.Adafruit_Trellis()
+        self.matrix1 = Adafruit_Trellis.Adafruit_Trellis()
+        self.trellis = Adafruit_Trellis.Adafruit_TrellisSet(matrix0, matrix1)
+        self.trellis.begin((0x70,  I2C_BUS), (0x71, I2C_BUS))
+    
+    def readChar(self):
+        charPressed = 99
+        # If a button was just pressed or released...
+        if trellis.readSwitches():
+            # go through every button
+            for i in range(numKeys):
+                # if it was pressed, turn it on
+                if trellis.justPressed(i):
+                    charPressed = i
+                    trellis.setLED(i)
+                # if it was released, turn it off
+                    trellis.clrLED(i)
+            # tell the trellis to set the LEDs we requested
+            trellis.writeDisplay()
+        return charPressed
 
 if __name__ == "__main__":
     s_head = HeadScreen()
